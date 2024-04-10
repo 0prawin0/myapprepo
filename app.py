@@ -1,5 +1,9 @@
 import openai
 import streamlit as st
+import os
+
+port = int(os.environ.get("PORT", 8501))
+st.set_option('server.port', port)
 
 openai_api_key = "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"
 
