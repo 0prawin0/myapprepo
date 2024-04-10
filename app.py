@@ -17,7 +17,7 @@ if "messages" not in st.session_state:
 if "job_title_asked" not in st.session_state:
     st.session_state["job_title_asked"] = False
 
-if "job_title_asked" not st.session_state:
+if "job_title_asked" not in st.session_state:
     st.session_state["messages"].append({"role": "assistant", "content": "What is the job title?"})
     st.session_state["job_title_asked"] = True
 
