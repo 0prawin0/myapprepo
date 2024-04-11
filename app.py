@@ -12,9 +12,8 @@ if openai_api_key is None:
 
 st.title("🧑‍💻 Job Genius JD Creator")
 st.write("""
-My name is Sridhr, the JD Creator🤖. 
-Let me help you create the best job description in the world.
-Please, don't ask me stupid questions❓
+Hi, I am your JD Creator🤖 
+Let me help you create a job description that would suit your requirements.
 """)
 
 # Initialize the session state keys
@@ -57,12 +56,14 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
 
     doc.add_paragraph()  # Add an empty line for spacing
 
-    # Add job description content
-    for line in jd_text.split('\n'):
-        if line.strip().endswith(':'):
-            doc.add_heading(line, level=1)
-        else:
-            doc.add_paragraph(line)
+    # Add job description content (only include responses from the user)
+    for msg in st.session_state["messages"]:
+        if msg['role'] == 'user':
+            line = msg['content']
+            if line.strip().endswith(':'):
+                doc.add_heading(line, level=1)
+            else:
+                doc.add_paragraph(line)
 
     doc.save(file_name)
 
@@ -76,6 +77,7 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
     os.remove(file_name)
 
     return f"Job description saved to {bucket_name}/{file_name}"
+
 
 # Button to submit the job description
 if st.button('Submit'):
