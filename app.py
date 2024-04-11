@@ -1,7 +1,9 @@
 import openai
 import streamlit as st
-
+from docx import Document
+from google.cloud import storage
 import os
+
 openai_api_key = os.getenv('OPENAI_API_KEY')
 if openai_api_key is None:
     raise ValueError("OPENAI_API_KEY environment variable is not set.")
@@ -36,10 +38,26 @@ if prompt := st.chat_input():
     st.session_state["messages"].append(msg)
     st.chat_message("assistant").write(msg["content"])
 
-# Example of checking and accessing a specific key in the session state
-if 'job_title' in st.session_state:
-    job_title = st.session_state['job_title']
-else:
-    job_title = 'Default Job Title'
+# Function to save JD to a Word file and upload to Google Cloud Storage
+def save_jd_to_bucket(jd_text, bucket_name, file_name):
+    # Create a Word document
+    doc = Document()
+    doc.add_paragraph(jd_text)
+    doc.save(file_name)
 
-# You can use job_title in your app as needed
+    # Upload to Google Cloud Storage
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+    blob.upload_from_filename(file_name)
+
+    # Remove the file after uploading
+    os.remove(file_name)
+
+    return f"Job description saved to {bucket_name}/{file_name}"
+
+# Button to submit the job description
+if st.button('Submit'):
+    jd_text = '\n'.join([msg['content'] for msg in st.session_state["messages"] if msg['role'] == 'assistant'])
+    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', 'job_description.docx')
+    st.success(result)
