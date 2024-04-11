@@ -19,32 +19,16 @@ Let me help you create a job description that would suit your requirements.
 # Initialize the session state keys
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: company_name, job_title,designation,key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team."}
+        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: company_name, job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team."}
     ]
 
 if "job_title_asked" not in st.session_state:
     st.session_state["job_title_asked"] = False
 
-if "company_name_asked" not in st.session_state:
-    st.session_state["company_name_asked"] = False
-
-if "designation_asked" not in st.session_state:
-    st.session_state["designation_asked"] = False
-
 # Ask for the job title if not asked before
 if not st.session_state["job_title_asked"]:
     st.session_state["messages"].append({"role": "assistant", "content": "What is the job title?"})
     st.session_state["job_title_asked"] = True
-
-# Ask for the company name if not asked before
-if not st.session_state["company_name_asked"]:
-    st.session_state["messages"].append({"role": "assistant", "content": "What is the Company name?"})
-    st.session_state["company_name_asked"] = True
-
-# Ask for the designation if not asked before
-if not st.session_state["designation_asked"]:
-    st.session_state["messages"].append({"role": "assistant", "content": "What is the designation?"})
-    st.session_state["designation_asked"] = True
 
 # Handle user input
 if prompt := st.chat_input():
@@ -59,7 +43,7 @@ if prompt := st.chat_input():
 def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name):
     # Create a unique file name
     unique_id = str(uuid.uuid4())
-    file_name = f"{job_role}-{designation}-{unique_id}.docx"
+    file_name = f"{job_role}-{designation}-{company_name}-{unique_id}.docx"
 
     # Create a Word document
     doc = Document()
@@ -73,7 +57,9 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
     doc.add_paragraph()  # Add an empty line for spacing
 
     # Add job description content
-    doc.add_paragraph(jd_text)
+    for line in jd_text.split('\n'):
+        if line.strip():
+            doc.add_paragraph(line)
 
     doc.save(file_name)
 
@@ -88,23 +74,40 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
 
     return f"Job description saved to {bucket_name}/{file_name}"
 
+# Revised function to extract job role, designation, and company name
+def extract_details(messages):
+    job_role = designation = company_name = "Unknown"
+    prompts = {"What is the job title?": "job_role", 
+               "What is the designation?": "designation", 
+               "What is the company name?": "company_name"}
+    
+    for i, msg in enumerate(messages):
+        if msg['role'] == 'assistant' and msg['content'] in prompts:
+            # Assume that the user's next message contains the answer
+            if i + 1 < len(messages) and messages[i + 1]['role'] == 'user':
+                answer = messages[i + 1]['content']
+                if prompts[msg['content']] == "job_role":
+                    job_role = answer
+                elif prompts[msg['content']] == "designation":
+                    designation = answer
+                elif prompts[msg['content']] == "company_name":
+                    company_name = answer
+    
+    return job_role, designation, company_name
+
 # Button to submit the job description
 if st.button('Submit'):
-    jd_text = '\n'.join([msg['content'] for msg in st.session_state["messages"] if msg['role'] == 'assistant'])
+    # Extract job role, designation, and company name from the session state messages
+    job_role, designation, company_name = extract_details(st.session_state["messages"])
     
-    # Extract job role, designation, and company name from the job description
-    job_role = "Unknown"  # Default value
-    designation = "Unknown"  # Default value
-    company_name = "Unknown"  # Default value
+    jd_text = ''
+    # Flag to determine when the job description starts
+    jd_start_flag = False
     for msg in st.session_state["messages"]:
-        if msg['role'] == 'assistant':
-            content = msg['content']
-            if content.startswith("What is the job title?") and ":" in content:
-                job_role = content.split(":")[1].strip()
-            elif content.startswith("What is the designation?") and ":" in content:
-                designation = content.split(":")[1].strip()
-            elif content.startswith("What is the company name?") and ":" in content:
-                company_name = content.split(":")[1].strip()
+        if msg['role'] == 'assistant' and "Here is the updated job description:" in msg['content']:
+            jd_start_flag = True  # Start capturing the job description from this point
+        if jd_start_flag and msg['role'] == 'assistant':
+            jd_text += msg['content'] + '\n'  # Add only assistant messages after job description start
 
     result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation, company_name)
     st.success(result)
