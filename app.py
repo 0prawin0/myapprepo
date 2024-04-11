@@ -25,20 +25,26 @@ if "messages" not in st.session_state:
 if "job_title_asked" not in st.session_state:
     st.session_state["job_title_asked"] = False
 
+if "company_name_asked" not in st.session_state:
+    st.session_state["company_name_asked"] = False
+
+if "designation_asked" not in st.session_state:
+    st.session_state["designation_asked"] = False
+
 # Ask for the job title if not asked before
 if not st.session_state["job_title_asked"]:
     st.session_state["messages"].append({"role": "assistant", "content": "What is the job title?"})
     st.session_state["job_title_asked"] = True
 
 # Ask for the company name if not asked before
-if not st.session_state["company_name"]:
+if not st.session_state["company_name_asked"]:
     st.session_state["messages"].append({"role": "assistant", "content": "What is the Company name?"})
-    st.session_state["company_name"] = True
+    st.session_state["company_name_asked"] = True
 
 # Ask for the designation if not asked before
-if not st.session_state["designation"]:
+if not st.session_state["designation_asked"]:
     st.session_state["messages"].append({"role": "assistant", "content": "What is the designation?"})
-    st.session_state["designation"] = True
+    st.session_state["designation_asked"] = True
 
 # Handle user input
 if prompt := st.chat_input():
