@@ -4,6 +4,7 @@ from docx import Document
 from google.cloud import storage
 import os
 import uuid
+from docx.shared import Pt
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
 if openai_api_key is None:
@@ -19,7 +20,7 @@ Please, don't ask me stupid questions❓
 # Initialize the session state keys
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team."}
+        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team, company_name."}
     ]
 
 if "job_title_asked" not in st.session_state:
@@ -40,13 +41,23 @@ if prompt := st.chat_input():
     st.chat_message("assistant").write(msg["content"])
 
 # Function to save JD to a Word file and upload to Google Cloud Storage
-def save_jd_to_bucket(jd_text, bucket_name, job_role, designation):
+def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name):
     # Create a unique file name
     unique_id = str(uuid.uuid4())
     file_name = f"{job_role}-{designation}-{unique_id}.docx"
 
     # Create a Word document
     doc = Document()
+    
+    # Add company name in bold and larger font
+    company_paragraph = doc.add_paragraph()
+    company_run = company_paragraph.add_run(company_name + "\n")
+    company_run.bold = True
+    company_run.font.size = Pt(16)  # Change the font size as needed
+
+    doc.add_paragraph()  # Add an empty line for spacing
+
+    # Add job description content
     for line in jd_text.split('\n'):
         if line.strip().endswith(':'):
             doc.add_heading(line, level=1)
@@ -70,9 +81,10 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation):
 if st.button('Submit'):
     jd_text = '\n'.join([msg['content'] for msg in st.session_state["messages"] if msg['role'] == 'assistant'])
     
-    # Extract job role and designation from the job description
+    # Extract job role, designation, and company name from the job description
     job_role = "Unknown"  # Default value
     designation = "Unknown"  # Default value
+    company_name = "Unknown"  # Default value
     for msg in st.session_state["messages"]:
         if msg['role'] == 'assistant':
             content = msg['content']
@@ -80,6 +92,8 @@ if st.button('Submit'):
                 job_role = content.split(":")[1].strip()
             elif content.startswith("What is the designation?"):
                 designation = content.split(":")[1].strip()
+            elif content.startswith("What is the company name?"):
+                company_name = content.split(":")[1].strip()
 
-    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation)
+    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation, company_name)
     st.success(result)
