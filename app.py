@@ -1,7 +1,8 @@
 import openai
 import streamlit as st
 
-openai_api_key = "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"
+import os
+openai_api_key = os.getenv('OPENAI_API_KEY')
 
 st.title("🧑‍💻 Job Genius JD Creator")
 st.write("""
