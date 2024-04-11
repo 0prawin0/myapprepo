@@ -2,7 +2,13 @@ steps:
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['cp', 'gs://bucket_jd_creation/requirements.txt', '.']
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/praxis-23-413603/myapp', '.']
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'OPENAI_API_KEY=$_OPENAI_API_KEY'
+      - '-t'
+      - 'gcr.io/praxis-23-413603/myapp'
+      - '.'
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/praxis-23-413603/myapp']
 images:
