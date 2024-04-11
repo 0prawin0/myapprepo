@@ -3,6 +3,7 @@ import streamlit as st
 from docx import Document
 from google.cloud import storage
 import os
+import uuid
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
 if openai_api_key is None:
@@ -39,10 +40,19 @@ if prompt := st.chat_input():
     st.chat_message("assistant").write(msg["content"])
 
 # Function to save JD to a Word file and upload to Google Cloud Storage
-def save_jd_to_bucket(jd_text, bucket_name, file_name):
+def save_jd_to_bucket(jd_text, bucket_name, job_role, designation):
+    # Create a unique file name
+    unique_id = str(uuid.uuid4())
+    file_name = f"{job_role}-{designation}-{unique_id}.docx"
+
     # Create a Word document
     doc = Document()
-    doc.add_paragraph(jd_text)
+    for line in jd_text.split('\n'):
+        if line.strip().endswith(':'):
+            doc.add_heading(line, level=1)
+        else:
+            doc.add_paragraph(line)
+
     doc.save(file_name)
 
     # Upload to Google Cloud Storage
@@ -59,5 +69,17 @@ def save_jd_to_bucket(jd_text, bucket_name, file_name):
 # Button to submit the job description
 if st.button('Submit'):
     jd_text = '\n'.join([msg['content'] for msg in st.session_state["messages"] if msg['role'] == 'assistant'])
-    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', 'job_description.docx')
+    
+    # Extract job role and designation from the job description
+    job_role = "Unknown"  # Default value
+    designation = "Unknown"  # Default value
+    for msg in st.session_state["messages"]:
+        if msg['role'] == 'assistant':
+            content = msg['content']
+            if content.startswith("What is the job title?"):
+                job_role = content.split(":")[1].strip()
+            elif content.startswith("What is the designation?"):
+                designation = content.split(":")[1].strip()
+
+    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation)
     st.success(result)
