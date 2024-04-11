@@ -20,7 +20,7 @@ Please, don't ask me stupid questions❓
 # Initialize the session state keys
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team, company_name."}
+        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: company_name,job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team ."}
     ]
 
 if "job_title_asked" not in st.session_state:
