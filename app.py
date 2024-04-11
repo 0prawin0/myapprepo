@@ -88,11 +88,11 @@ if st.button('Submit'):
     for msg in st.session_state["messages"]:
         if msg['role'] == 'assistant':
             content = msg['content']
-            if content.startswith("What is the job title?"):
+            if content.startswith("What is the job title?") and ":" in content:
                 job_role = content.split(":")[1].strip()
-            elif content.startswith("What is the designation?"):
+            elif content.startswith("What is the designation?") and ":" in content:
                 designation = content.split(":")[1].strip()
-            elif content.startswith("What is the company name?"):
+            elif content.startswith("What is the company name?") and ":" in content:
                 company_name = content.split(":")[1].strip()
 
     result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation, company_name)
