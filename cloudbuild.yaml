@@ -1,6 +1,6 @@
 steps:
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'gs://jd_creation/requirements.txt', '.']
+    args: ['cp', 'gs://bucket_jd_creation/requirements.txt', '.']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/praxis-23-413603/myapp', '.']
   - name: 'gcr.io/cloud-builders/docker'
