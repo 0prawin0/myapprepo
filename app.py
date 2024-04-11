@@ -19,7 +19,7 @@ Let me help you create a job description that would suit your requirements.
 # Initialize the session state keys
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: company_name,job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team ."}
+        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: company_name, job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team."}
     ]
 
 if "job_title_asked" not in st.session_state:
@@ -56,14 +56,8 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
 
     doc.add_paragraph()  # Add an empty line for spacing
 
-    # Add job description content (only include responses from the user)
-    for msg in st.session_state["messages"]:
-        if msg['role'] == 'user':
-            line = msg['content']
-            if line.strip().endswith(':'):
-                doc.add_heading(line, level=1)
-            else:
-                doc.add_paragraph(line)
+    # Add job description content
+    doc.add_paragraph(jd_text)
 
     doc.save(file_name)
 
@@ -77,7 +71,6 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
     os.remove(file_name)
 
     return f"Job description saved to {bucket_name}/{file_name}"
-
 
 # Button to submit the job description
 if st.button('Submit'):
