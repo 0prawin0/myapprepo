@@ -1,9 +1,9 @@
 steps:
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'gs://jd_creation/requirements.txt', '.']
+    args: ['cp', 'gs://bucket_jd_creation/requirements.txt', '.']
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/my-docker-repo/myapp:latest', '.']
+    args: ['build', '-t', 'gcr.io/praxis-23-413603/myapp', '.']
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/my-docker-repo/myapp:latest']
+    args: ['push', 'gcr.io/praxis-23-413603/myapp']
 images:
-  - 'us-central1-docker.pkg.dev/YOUR_PROJECT_ID/my-docker-repo/myapp:latest'
+  - 'gcr.io/praxis-23-413603/myapp'
