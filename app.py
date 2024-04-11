@@ -3,6 +3,8 @@ import streamlit as st
 
 import os
 openai_api_key = os.getenv('OPENAI_API_KEY')
+if openai_api_key is None:
+    raise ValueError("OPENAI_API_KEY environment variable is not set.")
 
 st.title("🧑‍💻 Job Genius JD Creator")
 st.write("""
