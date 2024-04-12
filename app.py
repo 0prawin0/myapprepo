@@ -40,7 +40,7 @@ if prompt := st.chat_input():
     st.chat_message("assistant").write(msg["content"])
 
 # Function to save JD to a Word file and upload to Google Cloud Storage
-def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name):
+def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name, location):
     # Create a unique file name
     unique_id = str(uuid.uuid4())
     file_name = f"{job_role}-{designation}-{unique_id}.docx"
@@ -48,11 +48,11 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
     # Create a Word document
     doc = Document()
     
-    # Add company name in bold and larger font
+    # Add company name, job role, and location in bold and larger font
     company_paragraph = doc.add_paragraph()
-    company_run = company_paragraph.add_run(company_name + "\n")
-    company_run.bold = True
-    company_run.font.size = Pt(16)  # Change the font size as needed
+    company_run = company_paragraph.add_run(f"Company Name: {company_name}\nJob Title: {job_role}\nLocation: {location}\n")
+    # company_run.bold = True
+    # company_run.font.size = Pt(16)  # Change the font size as needed
 
     doc.add_paragraph()  # Add an empty line for spacing
 
@@ -82,10 +82,11 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
 if st.button('Submit'):
     jd_text = '\n'.join([msg['content'] for msg in st.session_state["messages"] if msg['role'] in ['user', 'assistant']])
     
-    # Extract job role, designation, and company name from the job description
+    # Extract job role, designation, company name, and location from the job description
     job_role = "Unknown"  # Default value
     designation = "Unknown"  # Default value
     company_name = "Unknown"  # Default value
+    location = "Unknown"  # Default value
     for msg in st.session_state["messages"]:
         if msg['role'] == 'assistant':
             content = msg['content']
@@ -95,6 +96,8 @@ if st.button('Submit'):
                 designation = content.split(":")[1].strip()
             elif content.startswith("What is the company name?") and ":" in content:
                 company_name = content.split(":")[1].strip()
+            elif content.startswith("Where is the location?") and ":" in content:
+                location = content.split(":")[1].strip()
 
-    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation, company_name)
+    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation, company_name, location)
     st.success(result)
