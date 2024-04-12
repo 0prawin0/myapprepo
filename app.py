@@ -56,9 +56,9 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name)
 
     doc.add_paragraph()  # Add an empty line for spacing
 
-    # Add job description content (only include responses from the user)
+    # Add job description content (include responses from both the user and the assistant)
     for msg in st.session_state["messages"]:
-        if msg['role'] == 'user':
+        if msg['role'] == 'user' or msg['role'] == 'assistant':
             line = msg['content']
             if line.strip().endswith(':'):
                 doc.add_heading(line, level=1)
