@@ -1,4 +1,3 @@
-
 import openai
 import streamlit as st
 from docx import Document
@@ -20,16 +19,32 @@ Let me help you create a job description that would suit your requirements.
 # Initialize the session state keys
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: company_name, job_title, key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team ."}
+        {"role": "system", "content": "The following is a conversation with an AI assistant helping to create a job description. The assistant collects the following data one by one by interacting with the user by asking questions to create the best job description: company_name, job_title,designation,key_skills, soft_skills, location, desired_experience, preferred_experience, about_the_team."}
     ]
 
 if "job_title_asked" not in st.session_state:
     st.session_state["job_title_asked"] = False
 
+if "company_name_asked" not in st.session_state:
+    st.session_state["company_name_asked"] = False
+
+if "designation_asked" not in st.session_state:
+    st.session_state["designation_asked"] = False
+
 # Ask for the job title if not asked before
 if not st.session_state["job_title_asked"]:
     st.session_state["messages"].append({"role": "assistant", "content": "What is the job title?"})
     st.session_state["job_title_asked"] = True
+
+# Ask for the company name if not asked before
+if not st.session_state["company_name_asked"]:
+    st.session_state["messages"].append({"role": "assistant", "content": "What is the Company name?"})
+    st.session_state["company_name_asked"] = True
+
+# Ask for the designation if not asked before
+if not st.session_state["designation_asked"]:
+    st.session_state["messages"].append({"role": "assistant", "content": "What is the designation?"})
+    st.session_state["designation_asked"] = True
 
 # Handle user input
 if prompt := st.chat_input():
@@ -41,7 +56,7 @@ if prompt := st.chat_input():
     st.chat_message("assistant").write(msg["content"])
 
 # Function to save JD to a Word file and upload to Google Cloud Storage
-def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name, location):
+def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name):
     # Create a unique file name
     unique_id = str(uuid.uuid4())
     file_name = f"{job_role}-{designation}-{unique_id}.docx"
@@ -49,22 +64,16 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name,
     # Create a Word document
     doc = Document()
     
-    # Add company name, job role, and location in bold and larger font
+    # Add company name in bold and larger font
     company_paragraph = doc.add_paragraph()
-    company_run = company_paragraph.add_run(f"Company Name: {company_name}\nJob Title: {job_role}\nLocation: {location}\n")
-    # company_run.bold = True
-    # company_run.font.size = Pt(16)  # Change the font size as needed
+    company_run = company_paragraph.add_run(company_name + "\n")
+    company_run.bold = True
+    company_run.font.size = Pt(16)  # Change the font size as needed
 
     doc.add_paragraph()  # Add an empty line for spacing
 
-    # Add job description content (include responses from both the user and the assistant)
-    for msg in st.session_state["messages"]:
-        if msg['role'] in ['user', 'assistant']:
-            line = msg['content']
-            if line.strip().endswith(':'):
-                doc.add_heading(line, level=1)
-            else:
-                doc.add_paragraph(line)
+    # Add job description content
+    doc.add_paragraph(jd_text)
 
     doc.save(file_name)
 
@@ -81,13 +90,12 @@ def save_jd_to_bucket(jd_text, bucket_name, job_role, designation, company_name,
 
 # Button to submit the job description
 if st.button('Submit'):
-    jd_text = '\n'.join([msg['content'] for msg in st.session_state["messages"] if msg['role'] in ['user', 'assistant']])
+    jd_text = '\n'.join([msg['content'] for msg in st.session_state["messages"] if msg['role'] == 'assistant'])
     
-    # Extract job role, designation, company name, and location from the job description
+    # Extract job role, designation, and company name from the job description
     job_role = "Unknown"  # Default value
     designation = "Unknown"  # Default value
     company_name = "Unknown"  # Default value
-    location = "Unknown"  # Default value
     for msg in st.session_state["messages"]:
         if msg['role'] == 'assistant':
             content = msg['content']
@@ -97,8 +105,6 @@ if st.button('Submit'):
                 designation = content.split(":")[1].strip()
             elif content.startswith("What is the company name?") and ":" in content:
                 company_name = content.split(":")[1].strip()
-            elif content.startswith("Where is the location?") and ":" in content:
-                location = content.split(":")[1].strip()
 
-    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation, company_name, location)
+    result = save_jd_to_bucket(jd_text, 'jd_storage_bucket', job_role, designation, company_name)
     st.success(result)
